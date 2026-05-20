@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <title>Laberinto Chino · Sucesiones y Series</title>
+  <link rel="stylesheet" href="styles.css" />
+  <script>
+    window.MathJax = {
+      tex: {inlineMath: [['\\(','\\)']], displayMath: [['\\[','\\]']], processEscapes: true},
+      svg: {fontCache: 'global'},
+      options: {skipHtmlTags: ['script','noscript','style','textarea','pre','code']}
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+</head>
+<body>
+  <main id="app">
+    <section id="menu" class="screen active">
+      <div class="menu-card parchment">
+        <div class="seal">🐉</div>
+        <h1>Laberinto Chino: Muralla de las Series</h1>
+        <p class="subtitle">Sucesiones · Series · Criterios de convergencia</p>
+        <p class="intro">
+          Cruza la Gran Muralla, atraviesa templos y puertas rojas, encuentra los cuatro tesoros matemáticos y llega a la salida central. Resolverás retos sobre sucesiones, series numéricas y criterios de convergencia: razón, raíz, comparación al límite e integral, con preguntas en LaTeX de alta calidad.
+        </p>
+        <div class="animal-picker" aria-label="Selección de ficha">
+          <button class="animal-choice selected" data-animal="🐉">🐉 Dragón</button>
+          <button class="animal-choice" data-animal="🐀">🐀 Rata</button>
+          <button class="animal-choice" data-animal="🐂">🐂 Buey</button>
+          <button class="animal-choice" data-animal="🐅">🐅 Tigre</button>
+          <button class="animal-choice" data-animal="🐇">🐇 Conejo</button>
+          <button class="animal-choice" data-animal="🐍">🐍 Serpiente</button>
+          <button class="animal-choice" data-animal="🐎">🐎 Caballo</button>
+          <button class="animal-choice" data-animal="🐐">🐐 Cabra</button>
+          <button class="animal-choice" data-animal="🐒">🐒 Mono</button>
+          <button class="animal-choice" data-animal="🐓">🐓 Gallo</button>
+          <button class="animal-choice" data-animal="🐕">🐕 Perro</button>
+          <button class="animal-choice" data-animal="🐖">🐖 Cerdo</button>
+        </div>
+        <div class="menu-actions">
+          <button id="startBtn" class="primary" type="button" onclick="window.startGameFromButton && window.startGameFromButton(event)">Entrar a la muralla</button>
+          <button id="howBtn" class="secondary">Cómo jugar</button>
+        </div>
+        <div class="mini-rules">
+          <span>🏮 4 tesoros</span><span>🌀 10 portales</span><span>🧱 20 murallas</span><span>🔥 30 trampas</span><span>📜 pregunta cada 20 pasos</span><span>🐲 3 guardianes finales</span><span>🔒 5 bloqueos docentes</span><span>🕒 hora visible</span><span>📚 banco dinámico de preguntas</span>
+        </div>
+      </div>
+    </section>
+
+    <section id="game" class="screen">
+      <header class="hud">
+        <div class="hud-block"><small>Nota</small><strong id="scoreHud">1.0</strong></div>
+        <div class="hud-block treasure-status"><small>Tesoros</small><strong id="treasureHud">0/4</strong></div>
+        <div class="hud-block"><small>Pasos</small><strong id="stepsHud">0</strong></div>
+        <div class="hud-block"><small>Dificultad</small><strong id="difficultyHud">Básico</strong></div>
+        <div class="hud-block clock-hud"><small>Hora</small><strong id="clockHud">--:--:--</strong></div>
+        <div class="hud-actions">
+          <button id="howGameBtn" class="small-btn">Cómo jugar</button>
+          <button id="finishBtn" class="small-btn danger">Finalizar</button>
+          <button id="mainMenuBtn" class="small-btn">Menú principal</button>
+        </div>
+      </header>
+      <div class="game-layout">
+        <div class="canvas-panel">
+          <canvas id="gameCanvas" aria-label="Laberinto chino rectangular de pantalla completa"></canvas>
+          <div class="canvas-caption">
+            Usa flechas o WASD. El laberinto chino ocupa toda la pantalla. Encuentra 4 tesoros y luego entra a la salida central.
+          </div>
+        </div>
+        <aside class="side-panel parchment">
+          <h2>Travesía</h2>
+          <div id="missionText" class="mission-text">Busca los cuatro tesoros de la muralla.</div>
+          <div class="legend">
+            <div><span>🏮</span> Tesoro: +1.0 si aciertas, −0.5 si fallas.</div>
+            <div><span>🌀</span> Portal: hay 10 y te transportan a otro portal al azar.</div>
+            <div><span>🧱</span> Muralla de reto: hay 20 preguntas de mayor dificultad.</div>
+            <div><span>🔥</span> Trampa de fuego: hay 30; si lo cruzas, cambia todo el laberinto.</div>
+            <div><span>🧧</span> Bono: suma extra si respondes bien.</div>
+            <div><span>🏯</span> Salida: se abre después de 4 tesoros.</div>
+            <div><span>🐲</span> Guardianes finales: 3 retos avanzados en el único corredor seguro.</div>
+          </div>
+          <h3>Registro</h3>
+          <div id="eventLog" class="event-log"></div>
+        </aside>
+      </div>
+    </section>
+  </main>
+
+  <section id="questionModal" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-box question-box parchment">
+      <div class="question-head">
+        <div>
+          <span id="questionBadge" class="badge">Básico</span>
+          <h2 id="questionTitle">Pregunta</h2>
+        </div>
+        <button id="hintBtn" class="secondary compact">Ver pista</button>
+      </div>
+      <div id="questionText" class="question-text math-book"></div>
+      <div id="hintText" class="hint-text hidden math-book"></div>
+      <form id="answerForm" class="answers"></form>
+      <div id="feedbackBox" class="feedback hidden math-book"></div>
+      <div class="modal-actions">
+        <button id="submitAnswerBtn" class="primary" type="button">Responder</button>
+        <button id="continueBtn" class="secondary hidden" type="button">Continuar</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="howModal" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-box parchment how-box">
+      <h2>Cómo jugar</h2>
+      <div class="how-content math-book">
+        <p>
+          Este juego es una travesía matemática por una muralla y varios templos chinos. Tu ficha es un signo del zodiaco chino. El objetivo es encontrar <strong>cuatro tesoros</strong>, resolver los retos asociados y después llegar a la <strong>salida central</strong> del laberinto.
+        </p>
+        <p>
+          El movimiento se hace con las flechas \(\uparrow,\downarrow,\leftarrow,\rightarrow\) o con \(W,A,S,D\). La ficha avanza lentamente y se detiene cuando sueltas la tecla.
+        </p>
+        <ul>
+          <li>Cada <strong>20 pasos</strong> aparece una pregunta normal.</li>
+          <li>Los <strong>tesoros</strong> son retos de nivel experto, no tienen pista, dan \(+1.0\) si respondes bien y restan \(-0.5\) si respondes mal.</li>
+          <li>Si fallas un tesoro, el laberinto cambia completamente, la salida se reubica y tu avatar aparece en el extremo opuesto a la nueva salida.</li>
+          <li>Hay <strong>10 portales</strong>, pero ninguno aparece cerca de la salida final.</li>
+          <li>Hay <strong>20 murallas de reto</strong> con preguntas de mayor dificultad.</li>
+          <li>Hay <strong>30 trampas de fuego</strong>. Al cruzar una, se regenera todo el laberinto.</li>
+          <li>Las preguntas regulares muestran pistas orientadoras. Las pistas no dan la respuesta: indican qué criterio o idea revisar para poder resolver.</li>
+          <li>Alrededor de la salida hay muchas casillas transportadoras: solo existe <strong>un corredor seguro</strong> para acceder a la casilla final.</li>
+          <li>En ese corredor seguro hay <strong>tres guardianes finales</strong>. Si fallas uno, pierdes \(1.0\), el laberinto cambia completamente y el avatar reaparece lejos de la nueva salida.</li>
+          <li>Durante la partida no se permite pantallazo, tecla Escape, clic derecho, cambio de ventana, minimización ni salida de pantalla completa. Cada evento activa un bloqueo docente. Después de cinco bloqueos, la evaluación queda anulada. La hora del dispositivo permanece visible durante todo el juego y durante los bloqueos.</li>
+        </ul>
+        <p>
+          Los temas evaluados son <strong>sucesiones</strong>, <strong>series numéricas</strong> y criterios de convergencia: <strong>razón</strong>, <strong>raíz</strong>, <strong>comparación al límite</strong> e <strong>integral</strong>. También aparecen series geométricas y series \(p\)-armónicas como referencias básicas.
+        </p>
+      </div>
+      <button id="closeHowBtn" class="primary">Entendido</button>
+    </div>
+  </section>
+
+  <section id="endModal" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-box parchment end-box">
+      <h2 id="endTitle">Travesía finalizada</h2>
+      <div id="endSummary" class="math-book"></div>
+      <div class="modal-actions">
+        <button id="downloadReportBtn" class="primary">Descargar informe HTML tipo libro</button>
+        <button id="restartBtn" class="secondary">Volver al menú</button>
+      </div>
+    </div>
+  </section>
+
+
+  <div id="deviceClock" class="device-clock" aria-live="polite">
+    <span class="clock-label">Hora del dispositivo</span>
+    <strong id="deviceClockValue">--:--:--</strong>
+  </div>
+
+  <script src="game.js"></script>
+</body>
+</html>
